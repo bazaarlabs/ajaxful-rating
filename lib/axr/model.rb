@@ -28,12 +28,6 @@ module AjaxfulRating # :nodoc:
         has_many "#{dimension}_raters", :through => "#{dimension}_rates", :source => :rater
       end if options[:dimensions].is_a?(Array)
 
-      # UPDATED - REDIS
-      if options[:redis_cache] && defined?(Redis::Objects)
-        include Redis::Objects unless self.respond_to?(:value)
-        value :rating_average, :default => "0.0"
-      end
-
       class << self
         def axr_config
           @axr_config ||= {
@@ -50,6 +44,12 @@ module AjaxfulRating # :nodoc:
 
       include AjaxfulRating::InstanceMethods
       extend AjaxfulRating::SingletonMethods
+
+      # UPDATED - REDIS
+      if options[:redis_cache] && defined?(Redis::Objects)
+        include Redis::Objects unless self.respond_to?(:value)
+        value caching_column_name, :default => "0.0"
+      end
     end
 
     # Makes the association between user and Rate model.

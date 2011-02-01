@@ -28,6 +28,12 @@ module AjaxfulRating # :nodoc:
         has_many "#{dimension}_raters", :through => "#{dimension}_rates", :source => :rater
       end if options[:dimensions].is_a?(Array)
 
+      # UPDATED - REDIS
+      if options[:redis_cache] && defined?(Redis::Objects)
+        include Redis::Objects unless self.respond_to?(:value)
+        value :rating_average, :default => "0.0"
+      end
+
       class << self
         def axr_config
           @axr_config ||= {
@@ -172,10 +178,13 @@ module AjaxfulRating # :nodoc:
       self.class.caching_column_name(dimension)
     end
 
-    # Updates the cached average column in the rateable model.
+    # UPDATED - REDIS
+    # Updates the cached average column in the rateable model or in redis.
     def update_cached_average(dimension = nil)
       if self.class.caching_average?(dimension)
         update_attribute caching_column_name(dimension), self.rate_average(false, dimension)
+      elsif axr_config[:redis_cache] && self.respond_to?(caching_column_name(dimension)) # cache in redis
+        self.send(caching_column_name(dimension)).value = self.rate_average(false, dimension)
       end
     end
   end

@@ -261,7 +261,7 @@ module AjaxfulRating # :nodoc:
     #
     def caching_average?(dimension = nil)
       column_names.include?(caching_column_name(dimension)) ||
-      (axr_config[:redis_cache] && self.respond_to?(caching_column_name(dimension)))
+      (axr_config[:redis_cache] && self.method_defined?(caching_column_name(dimension)))
     end
 
     # Returns the name of the cache column for the passed dimension.

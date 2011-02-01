@@ -162,6 +162,7 @@ module AjaxfulRating # :nodoc:
       avg.nan? ? 0.0 : avg
     end
 
+    # UPDATED
     # Returns the stars given by a certain user (or nil)
     def stars_by(user_record, dimension=nil)
       user_id = user_record.is_a?(Fixnum) ? user_id : user_record.id

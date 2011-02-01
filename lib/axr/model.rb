@@ -154,7 +154,8 @@ module AjaxfulRating # :nodoc:
     # Pass false as param to force the calculation if you are caching it.
     def rate_average(cached = true, dimension = nil)
       avg = if cached && self.class.caching_average?(dimension)
-        send(caching_column_name(dimension)).to_f
+        self.class.axr_config[:redis_cache] ? send(caching_column_name(dimension)).value.to_f :
+          send(caching_column_name(dimension)).to_f
       else
         self.rates_sum(dimension).to_f / self.total_rates(dimension).to_f
       end
@@ -182,9 +183,11 @@ module AjaxfulRating # :nodoc:
     # Updates the cached average column in the rateable model or in redis.
     def update_cached_average(dimension = nil)
       if self.class.caching_average?(dimension)
-        update_attribute caching_column_name(dimension), self.rate_average(false, dimension)
-      elsif axr_config[:redis_cache] && self.respond_to?(caching_column_name(dimension)) # cache in redis
-        self.send(caching_column_name(dimension)).value = self.rate_average(false, dimension)
+        if self.class.axr_config[:redis_cache] # cache in redis
+          self.send(caching_column_name(dimension)).value = self.rate_average(false, dimension)
+        elsif # cache in mysql
+          update_attribute caching_column_name(dimension), self.rate_average(false, dimension)
+        end
       end
     end
   end
@@ -244,6 +247,7 @@ module AjaxfulRating # :nodoc:
       find_by_sql(sql)
     end
 
+    # UPDATED - REDIS
     # Indicates if the rateable model is able to cache the rate average.
     #
     # Include a column named +rating_average+ in your rateable model with
@@ -256,7 +260,8 @@ module AjaxfulRating # :nodoc:
     #   ajaxful_rateable :cache_column => :my_custom_column
     #
     def caching_average?(dimension = nil)
-      column_names.include?(caching_column_name(dimension))
+      column_names.include?(caching_column_name(dimension)) ||
+      (axr_config[:redis_cache] && self.respond_to?(caching_column_name(dimension)))
     end
 
     # Returns the name of the cache column for the passed dimension.

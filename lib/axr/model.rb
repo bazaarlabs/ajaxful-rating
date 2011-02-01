@@ -165,6 +165,7 @@ module AjaxfulRating # :nodoc:
     # UPDATED
     # Returns the stars given by a certain user (or nil)
     def stars_by(user_record, dimension=nil)
+      return nil if user_record.blank?
       user_id = user_record.is_a?(Fixnum) ? user_id : user_record.id
       rates(dimension).find_by_rater_id(user_id).try(:stars)
     end
